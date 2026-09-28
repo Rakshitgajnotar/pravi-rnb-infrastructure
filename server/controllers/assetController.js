@@ -486,11 +486,16 @@ const getAssetStats = async (req, res, next) => {
           activePercentage: totalAssets > 0 ? Math.round((activeAssets / totalAssets) * 100) : 0,
         },
         assetsByType,
+        typeBreakdown: assetsByType.map((t) => ({ name: t.type, count: t.count })),
         assetsByStatus,
+        statusBreakdown: assetsByStatus,
         assetsByCondition,
+        conditionBreakdown: assetsByCondition,
         assetsByDistrict,
+        districtBreakdown: assetsByDistrict,
         maintenanceSummary,
         recentlyAdded,
+        recentAssets: recentlyAdded,
       },
     });
   } catch (err) {

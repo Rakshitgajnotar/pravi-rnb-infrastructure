@@ -361,10 +361,22 @@ export default function DashboardPage() {
 
       {/* Visual Analytics Grid (Recharts) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <StatusDonutChart data={stats?.statusBreakdown || []} total={summary.totalAssets} />
-        <ConditionBarChart data={stats?.conditionBreakdown || []} />
-        <AssetTypeBarChart data={stats?.typeBreakdown || []} />
-        <DistrictBarChart data={stats?.districtBreakdown || []} />
+        <StatusDonutChart
+          data={stats?.assetsByStatus || stats?.statusBreakdown || []}
+          totalAssets={summary.totalAssets}
+        />
+        <ConditionBarChart
+          data={stats?.assetsByCondition || stats?.conditionBreakdown || []}
+        />
+        <AssetTypeBarChart
+          data={(stats?.assetsByType || stats?.typeBreakdown || []).map((t) => ({
+            name: t.name || t.type || t._id,
+            count: t.count || t.value || 0,
+          }))}
+        />
+        <DistrictBarChart
+          data={stats?.assetsByDistrict || stats?.districtBreakdown || []}
+        />
       </div>
 
       {/* Recently Added Assets Table */}
@@ -388,7 +400,7 @@ export default function DashboardPage() {
         </div>
 
         <AssetTable
-          assets={stats?.recentAssets || []}
+          assets={stats?.recentlyAdded || stats?.recentAssets || []}
           onView={(asset) => navigate(`/assets/${asset.assetId || asset._id}`)}
           onEdit={onEditAsset}
           onDelete={onDeleteAsset}
