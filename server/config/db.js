@@ -18,7 +18,10 @@ let dbState = {
 };
 
 const connectDB = async () => {
-  const primaryUri = process.env.MONGO_URI || 'mongodb://localhost:27017/asset_inventory';
+  const primaryUri =
+    process.env.MONGO_URI ||
+    process.env.MONGODB_URI ||
+    'mongodb://localhost:27017/asset_inventory';
   const isAtlas = primaryUri.includes('mongodb+srv') || (primaryUri.includes('@') && !primaryUri.includes('localhost'));
 
   // 1. Attempt connection to primary MongoDB (Atlas or Local)
@@ -44,10 +47,16 @@ const connectDB = async () => {
       if (err.message.includes('authentication failed')) {
         console.error(`[DB] ⚠️ Authentication Failed: Please check the Database User password in MongoDB Atlas (under Database Access).`);
       } else if (err.message.includes('ECONNREFUSED') || err.message.includes('ETIMEDOUT')) {
-        console.error(`[DB] ⚠️ Network / IP Error: Ensure your IP is whitelisted (or 0.0.0.0/0) in MongoDB Atlas under Network Access.`);
+        console.error(`[DB] ⚠️ Network / IP Error: Ensure 0.0.0.0/0 is whitelisted in MongoDB Atlas under Network Access.`);
+      }
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(`[DB Production Failure] Could not connect to MongoDB Atlas: ${err.message}. Please check credentials and whitelist 0.0.0.0/0 in MongoDB Atlas Network Access.`);
       }
     } else {
       console.warn(`[DB] Could not connect to local MongoDB: ${err.message}`);
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(`[DB Production Failure] No valid MongoDB connection string provided in MONGO_URI or MONGODB_URI.`);
+      }
     }
 
     console.log(`[DB] Initializing embedded MongoDB In-Memory Server fallback...`);
