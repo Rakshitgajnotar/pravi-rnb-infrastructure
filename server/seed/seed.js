@@ -6,6 +6,8 @@ const Asset = require('../models/Asset');
 const Inspection = require('../models/Inspection');
 const Maintenance = require('../models/Maintenance');
 const AssetHistory = require('../models/AssetHistory');
+const User = require('../models/User');
+const { PRESET_ROLES } = require('../controllers/authController');
 const {
   sampleInfrastructureAssets,
   sampleInspections,
@@ -27,7 +29,12 @@ const seedDatabase = async () => {
       Inspection.deleteMany({}),
       Maintenance.deleteMany({}),
       AssetHistory.deleteMany({}),
+      User.deleteMany({}),
     ]);
+
+    // Seed 4 official accounts
+    console.log('[Seed] Inserting Official R&B User accounts...');
+    await User.insertMany(PRESET_ROLES);
 
     console.log(`[Seed] Inserting ${sampleInfrastructureAssets.length} R&B Infrastructure Assets...`);
     const insertedAssets = await Asset.insertMany(sampleInfrastructureAssets);
@@ -86,12 +93,14 @@ const seedDatabase = async () => {
     await AssetHistory.insertMany(historyRecords);
 
     console.log(`[Seed] Successfully seeded:`);
+    console.log(`       - ${PRESET_ROLES.length} Official Accounts (Admin, Inspector, Contractor, Auditor)`);
     console.log(`       - ${insertedAssets.length} Infrastructure Assets`);
     console.log(`       - ${inspectionRecords.length} Inspection Reports`);
     console.log(`       - ${maintenanceRecords.length} Maintenance Operations`);
     console.log(`       - ${historyRecords.length} Lifecycle Audit Trail Events`);
 
     return {
+      usersCount: PRESET_ROLES.length,
       assetsCount: insertedAssets.length,
       inspectionsCount: inspectionRecords.length,
       maintenanceCount: maintenanceRecords.length,

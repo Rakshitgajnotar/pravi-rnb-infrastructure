@@ -1,23 +1,5 @@
 const User = require('../models/User');
 
-// Default fallback admin user for system operations or requests without explicit credentials
-const DEFAULT_USER = {
-  _id: 'system_admin_001',
-  name: 'Er. Rajesh Patel',
-  email: 'rajesh.patel@rnb.gujarat.gov.in',
-  role: 'Admin',
-  designation: 'Executive Engineer (EE)',
-  division: 'R&B Gandhinagar State Division',
-  permissions: {
-    canCreateAsset: true,
-    canEditAsset: true,
-    canDeleteAsset: true,
-    canInspect: true,
-    canMaintain: true,
-    canExportReports: true,
-  },
-};
-
 const getDesignation = (role) => {
   switch (role) {
     case 'Admin':
@@ -44,19 +26,18 @@ const getPermissions = (role) => {
   };
 };
 
-// Extracts user context from incoming request headers or database
+// Strict Authentication Middleware - Rejects unauthenticated requests with 401
 const authenticate = async (req, res, next) => {
   try {
     let role = null;
     let name = null;
     let userId = null;
 
-    // 1. Check standard Authorization header (Bearer token or encoded json)
+    // 1. Check standard Authorization header (Bearer token)
     const authHeader = req.headers['authorization'];
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7).trim();
       try {
-        // Check if token is Base64 encoded JSON
         const decodedStr = Buffer.from(token, 'base64').toString('utf8');
         if (decodedStr.startsWith('{')) {
           const parsed = JSON.parse(decodedStr);
@@ -98,7 +79,6 @@ const authenticate = async (req, res, next) => {
     }
 
     if (role) {
-      // Find matching user by role
       try {
         const dbUser = await User.findOne({ role });
         if (dbUser) {
@@ -109,7 +89,6 @@ const authenticate = async (req, res, next) => {
         // ignore
       }
 
-      // If user not in DB yet, create dynamic user object
       req.user = {
         _id: userId || `usr_${role.toLowerCase()}`,
         name: name || `Official (${role})`,
@@ -121,12 +100,16 @@ const authenticate = async (req, res, next) => {
       return next();
     }
 
-    // Default to Super Admin for seamless development & backwards compatibility
-    req.user = DEFAULT_USER;
-    next();
+    // 4. If neither token nor credentials exist, DENY ACCESS with 401 Unauthorized
+    return res.status(401).json({
+      success: false,
+      message: 'Access Denied: Authentication required. Please log in with your official R&B credentials to access this system.',
+    });
   } catch (err) {
-    req.user = DEFAULT_USER;
-    next();
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication failed. Please log in again.',
+    });
   }
 };
 
@@ -154,5 +137,4 @@ const authorize = (...allowedRoles) => {
 module.exports = {
   authenticate,
   authorize,
-  DEFAULT_USER,
 };

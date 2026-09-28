@@ -12,23 +12,28 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     try {
-      const storedUser = localStorage.getItem('pravi_user');
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        if (user && user.role) {
-          // Encode role and identity inside standard Authorization header to prevent custom header CORS preflight issues
-          const payload = btoa(
-            unescape(
-              encodeURIComponent(
-                JSON.stringify({
-                  role: user.role,
-                  name: user.name || '',
-                  _id: user._id || '',
-                })
+      const storedToken = localStorage.getItem('pravi_token');
+      if (storedToken) {
+        config.headers['Authorization'] = `Bearer ${storedToken}`;
+      } else {
+        const storedUser = localStorage.getItem('pravi_user');
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          if (user && user.role) {
+            // Encode role and identity inside standard Authorization header to prevent custom header CORS preflight issues
+            const payload = btoa(
+              unescape(
+                encodeURIComponent(
+                  JSON.stringify({
+                    role: user.role,
+                    name: user.name || '',
+                    _id: user._id || '',
+                  })
+                )
               )
-            )
-          );
-          config.headers['Authorization'] = `Bearer ${payload}`;
+            );
+            config.headers['Authorization'] = `Bearer ${payload}`;
+          }
         }
       }
     } catch (e) {
@@ -39,7 +44,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for consistent error messaging
+// Response interceptor for consistent error messaging & 401 redirection
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -49,6 +54,16 @@ api.interceptors.response.use(
     } else if (error.message) {
       message = error.message;
     }
+
+    // Automatically purge session and redirect to /login on 401 Unauthorized
+    if (error.response?.status === 401) {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        localStorage.removeItem('pravi_user');
+        localStorage.removeItem('pravi_token');
+        window.location.href = '/login';
+      }
+    }
+
     const customError = new Error(message);
     customError.status = error.response?.status;
     customError.errors = error.response?.data?.errors;

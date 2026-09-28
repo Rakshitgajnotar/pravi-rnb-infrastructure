@@ -14,6 +14,7 @@ import {
   FileText,
   UserCheck,
   ChevronDown,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/common/Toast';
@@ -24,7 +25,7 @@ export default function Navbar({ onOpenAddModal, onReseed, isReseeding, dbInfo }
   const [searchInput, setSearchInput] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleModalOpen, setRoleModalOpen] = useState(false);
-  const { currentUser, can } = useAuth();
+  const { currentUser, can, logout } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -132,6 +133,19 @@ export default function Navbar({ onOpenAddModal, onReseed, isReseeding, dbInfo }
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-colors" />
           </button>
+
+          {/* Official Logout Button */}
+          <button
+            onClick={() => {
+              logout();
+              showToast('Logged out of official department session.', 'info');
+              navigate('/login');
+            }}
+            title="Log out of Official Session"
+            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all border border-transparent hover:border-rose-200"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Mobile Drawer Menu */}
@@ -212,6 +226,19 @@ export default function Navbar({ onOpenAddModal, onReseed, isReseeding, dbInfo }
               >
                 <FileText className="w-4 h-4" />
                 <span>Reports & Audits</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  logout();
+                  showToast('Logged out of official department session.', 'info');
+                  navigate('/login');
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 mt-2 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Log Out of Session</span>
               </button>
             </div>
           </div>

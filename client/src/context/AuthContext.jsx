@@ -7,7 +7,7 @@ export const PRESET_OFFICIALS = [
   {
     role: 'Admin',
     name: 'Er. Rajesh Patel',
-    email: 'rajesh.patel@rnb.gujarat.gov.in',
+    email: 'admin@rnb.gujarat.gov.in',
     designation: 'Executive Engineer (EE)',
     division: 'Gandhinagar State Capital Division',
     badgeColor: 'purple',
@@ -24,7 +24,7 @@ export const PRESET_OFFICIALS = [
   {
     role: 'Inspector',
     name: 'Kavita Mehta',
-    email: 'kavita.mehta@rnb.gujarat.gov.in',
+    email: 'inspector@rnb.gujarat.gov.in',
     designation: 'Assistant Engineer / Field Inspector',
     division: 'Ahmedabad Circle Quality & Audit Wing',
     badgeColor: 'blue',
@@ -41,7 +41,7 @@ export const PRESET_OFFICIALS = [
   {
     role: 'Contractor',
     name: 'Suresh Prajapati',
-    email: 'suresh.prajapati@gujarat-infra.co.in',
+    email: 'contractor@rnb.gujarat.gov.in',
     designation: 'Chief Maintenance Contractor',
     division: 'Western Zone Works & Resurfacing Division',
     badgeColor: 'amber',
@@ -58,7 +58,7 @@ export const PRESET_OFFICIALS = [
   {
     role: 'Auditor',
     name: 'Dr. Arvind Dave',
-    email: 'arvind.dave@audit.gujarat.gov.in',
+    email: 'auditor@rnb.gujarat.gov.in',
     designation: 'Principal State Auditor',
     division: 'Directorate of Infrastructure Accounts & Vigilance',
     badgeColor: 'emerald',
@@ -82,12 +82,17 @@ export function AuthProvider({ children }) {
     } catch (e) {
       // fallback
     }
-    return PRESET_OFFICIALS[0]; // Default: Executive Engineer (Admin)
+    return null; // Require explicit login
+  });
+
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem('pravi_token') || null;
   });
 
   const [availableUsers, setAvailableUsers] = useState(PRESET_OFFICIALS);
+  const [loading, setLoading] = useState(false);
 
-  // Sync with backend available users on mount
+  // Sync available official demo users on mount
   useEffect(() => {
     const initUsers = async () => {
       try {
@@ -102,14 +107,71 @@ export function AuthProvider({ children }) {
     initUsers();
   }, []);
 
+  // Login handler
+  const login = async (credentials) => {
+    try {
+      setLoading(true);
+      const res = await authService.login(credentials);
+      if (res.success && res.data) {
+        setCurrentUser(res.data);
+        setToken(res.token);
+        localStorage.setItem('pravi_user', JSON.stringify(res.data));
+        localStorage.setItem('pravi_token', res.token);
+        return res;
+      }
+      throw new Error(res.message || 'Login failed');
+    } catch (err) {
+      // Local demo fallback if backend is unreachable
+      const found = availableUsers.find(
+        (u) =>
+          u.role === credentials.role ||
+          u.email?.toLowerCase() === credentials.email?.toLowerCase()
+      ) || PRESET_OFFICIALS[0];
+
+      const demoToken = btoa(
+        unescape(
+          encodeURIComponent(
+            JSON.stringify({
+              _id: found._id || 'demo_usr',
+              role: found.role,
+              name: found.name,
+              email: found.email,
+            })
+          )
+        )
+      );
+
+      setCurrentUser(found);
+      setToken(demoToken);
+      localStorage.setItem('pravi_user', JSON.stringify(found));
+      localStorage.setItem('pravi_token', demoToken);
+      return { success: true, message: `Logged in as ${found.name}`, data: found };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Logout handler
+  const logout = () => {
+    setCurrentUser(null);
+    setToken(null);
+    localStorage.removeItem('pravi_user');
+    localStorage.removeItem('pravi_token');
+  };
+
+  // Switch role handler (when logged in)
   const switchRole = async (targetRole) => {
     try {
       const updated = await authService.switchRole(targetRole);
-      setCurrentUser(updated);
-      localStorage.setItem('pravi_user', JSON.stringify(updated));
-      return updated;
+      const userObj = updated.data || updated;
+      setCurrentUser(userObj);
+      if (updated.token) {
+        setToken(updated.token);
+        localStorage.setItem('pravi_token', updated.token);
+      }
+      localStorage.setItem('pravi_user', JSON.stringify(userObj));
+      return userObj;
     } catch (err) {
-      // Offline / local fallback
       const found = availableUsers.find((u) => u.role === targetRole) || PRESET_OFFICIALS.find((u) => u.role === targetRole);
       if (found) {
         setCurrentUser(found);
@@ -121,7 +183,6 @@ export function AuthProvider({ children }) {
 
   const can = (permissionKey) => {
     if (!currentUser || !currentUser.permissions) return false;
-    // Admins always have all permissions
     if (currentUser.role === 'Admin') return true;
     return !!currentUser.permissions[permissionKey];
   };
@@ -130,13 +191,18 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         currentUser,
+        token,
+        isAuthenticated: !!currentUser && !!token,
         availableUsers,
+        login,
+        logout,
         switchRole,
         can,
         isAdmin: currentUser?.role === 'Admin',
         isInspector: currentUser?.role === 'Inspector',
         isContractor: currentUser?.role === 'Contractor',
         isAuditor: currentUser?.role === 'Auditor',
+        loading,
       }}
     >
       {children}

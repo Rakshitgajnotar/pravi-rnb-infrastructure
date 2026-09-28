@@ -9,12 +9,13 @@ import {
   Wrench,
   FileText,
   Landmark,
+  LogOut,
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ onOpenAddModal, dbInfo }) {
-  const { can } = useAuth();
+  const { currentUser, can, logout } = useAuth();
   const navItems = [
     {
       to: '/',
@@ -106,6 +107,31 @@ export default function Sidebar({ onOpenAddModal, dbInfo }) {
             <PlusCircle className="w-4 h-4" />
             <span>+ Register Asset</span>
           </button>
+        )}
+
+        {/* Active Official Card & Logout */}
+        {currentUser && (
+          <div className="p-2.5 rounded-xl bg-slate-850/90 border border-slate-800 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-brand-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                {currentUser?.name?.split(' ').map((n) => n[0]).slice(0, 2).join('') || 'RB'}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
+                <p className="text-[10px] text-brand-400 font-semibold truncate capitalize">{currentUser.role} • {currentUser.division || 'Gujarat'}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                logout();
+                window.location.href = '/login';
+              }}
+              title="Log Out of Session"
+              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors shrink-0"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         )}
 
         {/* Database Status */}
