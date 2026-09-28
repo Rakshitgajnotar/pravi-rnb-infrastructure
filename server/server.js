@@ -50,36 +50,51 @@ app.use('/api/auth', authRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 
-// Root route
-app.get('/', (req, res) => {
-  res.json({
-    name: 'PRAVI — Government Roads & Buildings (R&B) Infrastructure Asset Inventory System',
-    status: 'Running',
-    version: '2.0.0',
-    rbac: {
-      enabled: true,
-      roles: ['Admin', 'Inspector', 'Contractor', 'Auditor'],
-    },
-    documentation: {
-      health: 'GET /api/health',
-      auth: 'GET /api/auth/users',
-      currentAuth: 'GET /api/auth/me',
-      assets: 'GET /api/assets',
-      stats: 'GET /api/assets/stats',
-      singleAsset: 'GET /api/assets/:id',
-      createAsset: 'POST /api/assets (Admin only)',
-      updateAsset: 'PUT /api/assets/:id (Admin & Inspector)',
-      deleteAsset: 'DELETE /api/assets/:id (Admin only)',
-      inspections: 'GET /api/assets/:id/inspections',
-      createInspection: 'POST /api/assets/:id/inspections (Admin & Inspector)',
-      maintenance: 'GET /api/assets/:id/maintenance',
-      createMaintenance: 'POST /api/assets/:id/maintenance (Admin & Contractor)',
-      allMaintenance: 'GET /api/maintenance',
-      history: 'GET /api/assets/:id/history',
-      seed: 'POST /api/assets/seed',
-    },
+const path = require('path');
+const fs = require('fs');
+
+// Check if client build output exists (enables 1-service fullstack deployment on Render/Railway/VPS)
+const clientDistPath = path.join(__dirname, '../client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(clientDistPath, 'index.html'));
   });
-});
+} else {
+  // Root route for API documentation when backend runs as standalone service
+  app.get('/', (req, res) => {
+    res.json({
+      name: 'PRAVI — Government Roads & Buildings (R&B) Infrastructure Asset Inventory System',
+      status: 'Running',
+      version: '2.0.0',
+      rbac: {
+        enabled: true,
+        roles: ['Admin', 'Inspector', 'Contractor', 'Auditor'],
+      },
+      documentation: {
+        health: 'GET /api/health',
+        auth: 'GET /api/auth/users',
+        currentAuth: 'GET /api/auth/me',
+        assets: 'GET /api/assets',
+        stats: 'GET /api/assets/stats',
+        singleAsset: 'GET /api/assets/:id',
+        createAsset: 'POST /api/assets (Admin only)',
+        updateAsset: 'PUT /api/assets/:id (Admin & Inspector)',
+        deleteAsset: 'DELETE /api/assets/:id (Admin only)',
+        inspections: 'GET /api/assets/:id/inspections',
+        createInspection: 'POST /api/assets/:id/inspections (Admin & Inspector)',
+        maintenance: 'GET /api/assets/:id/maintenance',
+        createMaintenance: 'POST /api/assets/:id/maintenance (Admin & Contractor)',
+        allMaintenance: 'GET /api/maintenance',
+        history: 'GET /api/assets/:id/history',
+        seed: 'POST /api/assets/seed',
+      },
+    });
+  });
+}
 
 // Centralized Error Handling
 app.use(notFound);
