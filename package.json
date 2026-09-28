@@ -4,7 +4,7 @@
   "description": "Full-Stack MERN Asset Inventory Management System for Hackathon",
   "scripts": {
     "start": "node server/server.js",
-    "build": "npm install --prefix client && npm run build --prefix client && npm install --prefix server",
+    "build": "npm install --prefix client --include=dev && npm run build --prefix client && npm install --prefix server",
     "server": "npm run start --prefix server",
     "server:dev": "npm run dev --prefix server",
     "client": "npm run dev --prefix client",
