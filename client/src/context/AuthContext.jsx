@@ -174,7 +174,21 @@ export function AuthProvider({ children }) {
     } catch (err) {
       const found = availableUsers.find((u) => u.role === targetRole) || PRESET_OFFICIALS.find((u) => u.role === targetRole);
       if (found) {
+        const demoToken = btoa(
+          unescape(
+            encodeURIComponent(
+              JSON.stringify({
+                _id: found._id || `usr_${found.role.toLowerCase()}`,
+                role: found.role,
+                name: found.name,
+                email: found.email,
+              })
+            )
+          )
+        );
         setCurrentUser(found);
+        setToken(demoToken);
+        localStorage.setItem('pravi_token', demoToken);
         localStorage.setItem('pravi_user', JSON.stringify(found));
         return found;
       }
