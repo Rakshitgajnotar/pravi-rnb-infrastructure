@@ -1,0 +1,15 @@
+{
+  "name": "asset-inventory-management-system",
+  "version": "1.0.0",
+  "description": "Full-Stack MERN Asset Inventory Management System for Hackathon",
+  "scripts": {
+    "server": "npm run start --prefix server",
+    "server:dev": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client",
+    "seed": "npm run seed --prefix server",
+    "build": "npm run build --prefix client"
+  },
+  "keywords": ["mern", "inventory", "asset-management", "react", "express", "mongodb"],
+  "author": "",
+  "license": "ISC"
+}
